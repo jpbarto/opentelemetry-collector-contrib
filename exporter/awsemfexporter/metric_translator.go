@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -236,6 +237,10 @@ func groupedMetricToCWMeasurement(groupedMetric *groupedMetric, config *Config) 
 		}
 		if metricInfo.unit != "" {
 			metrics[idx]["Unit"] = metricInfo.unit
+		}
+
+		if err := cwlogs.ValidateStorageResolution(metricInfo.storageResolution); err == nil {
+			metrics[idx]["StorageResolution"] = strconv.Itoa(metricInfo.storageResolution)
 		}
 		idx++
 	}

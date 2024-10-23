@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/cwlogs"
 )
 
 // MetricDeclaration characterizes a rule to be used to set dimensions for certain
@@ -26,6 +28,10 @@ type MetricDeclaration struct {
 	// (Optional) List of label matchers that define matching rules to filter against
 	// the labels of incoming metrics.
 	LabelMatchers []*LabelMatcher `mapstructure:"label_matchers"`
+	// StorageResolution is an integer value representing the storage resolution for the
+	// metric in CloudWatch. Storage resolution should be a value of either 1 or 60 as
+	// these are the values supported by CloudWatch EMF today.
+	StorageResolution int `mapstructure:"storage_resolution"`
 
 	// metricRegexList is a list of compiled regexes for metric name selectors.
 	metricRegexList []*regexp.Regexp
@@ -106,6 +112,10 @@ func (m *MetricDeclaration) init(logger *zap.Logger) (err error) {
 	m.metricRegexList = make([]*regexp.Regexp, len(m.MetricNameSelectors))
 	for i, selector := range m.MetricNameSelectors {
 		m.metricRegexList[i] = regexp.MustCompile(selector)
+	}
+
+	if err := cwlogs.ValidateStorageResolution(m.StorageResolution); err != nil {
+		return err
 	}
 
 	// Initialize label matchers

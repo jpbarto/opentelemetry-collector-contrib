@@ -67,3 +67,14 @@ func ValidateTagsInput(input map[string]*string) error {
 
 	return nil
 }
+
+func ValidateStorageResolution(input int) error {
+	switch input {
+	case
+		0,
+		1,
+		60:
+		return nil
+	}
+	return errors.New("invalid value for storage resolution. Currently supported values are 1 or 60")
+}

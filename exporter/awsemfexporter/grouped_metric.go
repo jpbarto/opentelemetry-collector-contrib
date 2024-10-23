@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/cwlogs"
 	aws "github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/metrics"
 )
 
@@ -22,8 +23,9 @@ type groupedMetric struct {
 
 // metricInfo defines value and unit for OT Metrics
 type metricInfo struct {
-	value any
-	unit  string
+	value             any
+	unit              string
+	storageResolution int
 }
 
 // addToGroupedMetric processes OT metrics and adds them into GroupedMetric buckets
@@ -78,8 +80,9 @@ func addToGroupedMetric(
 			}
 
 			metric := &metricInfo{
-				value: dp.value,
-				unit:  translateUnit(pmd, descriptor),
+				value:             dp.value,
+				unit:              translateUnit(pmd, descriptor),
+				storageResolution: storageResolution(pmd, descriptor),
 			}
 
 			if dp.timestampMs > 0 {
@@ -206,4 +209,13 @@ func translateUnit(metric pmetric.Metric, descriptor map[string]MetricDescriptor
 		unit = "Bits"
 	}
 	return unit
+}
+
+func storageResolution(metric pmetric.Metric, descriptor map[string]MetricDescriptor) int {
+	if descriptor, exists := descriptor[metric.Name()]; exists {
+		if err := cwlogs.ValidateStorageResolution(descriptor.StorageResolution); err == nil {
+			return descriptor.StorageResolution
+		}
+	}
+	return 0
 }

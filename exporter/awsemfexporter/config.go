@@ -101,6 +101,10 @@ type MetricDescriptor struct {
 	// Overwrite set to true means the existing metric descriptor will be overwritten or a new metric descriptor will be created; false means
 	// the descriptor will only be configured if empty.
 	Overwrite bool `mapstructure:"overwrite"`
+	// StorageResolution specifies the CloudWatch storage resolution to be applied to the metric.
+	// Right now CloudWatch EMF supports a value of 1 or 60 which represents 1 second resolution or 60 seconds resolution.
+	// If no value is provided a resolution of 60 is assumed.
+	StorageResolution int `mapstructure:"storage_resolution"`
 }
 
 var _ component.Config = (*Config)(nil)
@@ -127,6 +131,10 @@ func (config *Config) Validate() error {
 			validDescriptors = append(validDescriptors, descriptor)
 		} else {
 			config.logger.Warn("Dropped unsupported metric desctriptor.", zap.String("unit", descriptor.Unit))
+		}
+		if err := cwlogs.ValidateStorageResolution(descriptor.StorageResolution); err != nil {
+			config.logger.Warn("Dropped unsupported storage resolution value.", zap.String("storage_resolution", err.Error()))
+			continue
 		}
 	}
 	config.MetricDescriptors = validDescriptors
