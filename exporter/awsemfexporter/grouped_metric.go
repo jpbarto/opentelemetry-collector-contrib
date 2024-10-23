@@ -217,5 +217,5 @@ func storageResolution(metric pmetric.Metric, descriptor map[string]MetricDescri
 			return descriptor.StorageResolution
 		}
 	}
-	return 0
+	return 60
 }

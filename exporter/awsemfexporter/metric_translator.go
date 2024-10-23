@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strconv"
 	"time"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -46,10 +45,17 @@ type cWMetrics struct {
 	fields       map[string]any
 }
 
+type cWMetricDeclaration struct {
+	Name              string
+	Unit              string
+	StorageResolution int
+}
+
 type cWMeasurement struct {
 	Namespace  string
 	Dimensions [][]string
-	Metrics    []map[string]string
+	// Metrics    []map[string]string
+	Metrics []cWMetricDeclaration
 }
 
 type cWMetricStats struct {
@@ -229,18 +235,19 @@ func groupedMetricToCWMeasurement(groupedMetric *groupedMetric, config *Config) 
 	// Add on rolled-up dimensions
 	dimensions = append(dimensions, rollupDimensionArray...)
 
-	metrics := make([]map[string]string, len(groupedMetric.metrics))
+	metrics := make([]cWMetricDeclaration, len(groupedMetric.metrics))
 	idx = 0
 	for metricName, metricInfo := range groupedMetric.metrics {
-		metrics[idx] = map[string]string{
-			"Name": metricName,
+		metrics[idx] = cWMetricDeclaration{
+			Name:              metricName,
+			Unit:              "",
+			StorageResolution: 60,
 		}
 		if metricInfo.unit != "" {
-			metrics[idx]["Unit"] = metricInfo.unit
+			metrics[idx].Unit = metricInfo.unit
 		}
-
 		if err := cwlogs.ValidateStorageResolution(metricInfo.storageResolution); err == nil {
-			metrics[idx]["StorageResolution"] = strconv.Itoa(metricInfo.storageResolution)
+			metrics[idx].StorageResolution = metricInfo.storageResolution
 		}
 		idx++
 	}
@@ -283,7 +290,7 @@ func groupedMetricToCWMeasurementsWithFilters(groupedMetric *groupedMetric, conf
 	// Group metrics by matched metric declarations
 	type metricDeclarationGroup struct {
 		metricDeclIdxList []int
-		metrics           []map[string]string
+		metrics           []cWMetricDeclaration
 	}
 
 	metricDeclGroups := make(map[string]*metricDeclarationGroup)
@@ -304,11 +311,14 @@ func groupedMetricToCWMeasurementsWithFilters(groupedMetric *groupedMetric, conf
 			continue
 		}
 
-		metric := map[string]string{
-			"Name": metricName,
+		metric := cWMetricDeclaration{
+			Name:              metricName,
+			Unit:              "",
+			StorageResolution: 60,
 		}
+
 		if metricInfo.unit != "" {
-			metric["Unit"] = metricInfo.unit
+			metric.Unit = metricInfo.unit
 		}
 		metricDeclKey := fmt.Sprint(metricDeclIdx)
 		if group, ok := metricDeclGroups[metricDeclKey]; ok {
@@ -316,7 +326,7 @@ func groupedMetricToCWMeasurementsWithFilters(groupedMetric *groupedMetric, conf
 		} else {
 			metricDeclGroups[metricDeclKey] = &metricDeclarationGroup{
 				metricDeclIdxList: metricDeclIdx,
-				metrics:           []map[string]string{metric},
+				metrics:           []cWMetricDeclaration{metric},
 			}
 		}
 	}
