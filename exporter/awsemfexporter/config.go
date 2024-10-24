@@ -129,12 +129,10 @@ func (config *Config) Validate() error {
 		}
 		if _, ok := eMFSupportedUnits[descriptor.Unit]; ok {
 			validDescriptors = append(validDescriptors, descriptor)
+		} else if err := cwlogs.ValidateStorageResolution(descriptor.StorageResolution); err == nil {
+			validDescriptors = append(validDescriptors, descriptor)
 		} else {
-			config.logger.Warn("Dropped unsupported metric desctriptor.", zap.String("unit", descriptor.Unit))
-		}
-		if err := cwlogs.ValidateStorageResolution(descriptor.StorageResolution); err != nil {
-			config.logger.Warn("Dropped unsupported storage resolution value.", zap.String("storage_resolution", err.Error()))
-			continue
+			config.logger.Warn("Dropped unsupported metric desctriptor.", zap.String("unit", descriptor.Unit), zap.Int("storage_resolution", descriptor.StorageResolution))
 		}
 	}
 	config.MetricDescriptors = validDescriptors
