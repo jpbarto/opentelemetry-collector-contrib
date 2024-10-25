@@ -6,6 +6,7 @@ package awsemfexporter
 import (
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/cwlogs"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
@@ -241,6 +242,24 @@ func TestMetricDeclarationInit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, m.metricRegexList, 3)
 		assert.Len(t, m.Dimensions, 2)
+	})
+
+	t.Run("with storageResolution", func(t *testing.T) {
+		m := &MetricDescriptor{
+			MetricName:        "foo",
+			StorageResolution: 1,
+		}
+		err := cwlogs.ValidateStorageResolution(m.StorageResolution)
+		assert.Nil(t, err)
+	})
+
+	t.Run("with invalid storageResolution", func(t *testing.T) {
+		m := &MetricDescriptor{
+			MetricName:        "foo",
+			StorageResolution: 2,
+		}
+		err := cwlogs.ValidateStorageResolution(m.StorageResolution)
+		assert.NotNil(t, err)
 	})
 
 	// Test removal of dimension sets with more than 10 elements

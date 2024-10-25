@@ -45,7 +45,7 @@ type cWMetrics struct {
 	fields       map[string]any
 }
 
-type cWMetricDeclaration struct {
+type cWMetricDescriptor struct {
 	Name              string
 	Unit              string
 	StorageResolution int
@@ -55,7 +55,7 @@ type cWMeasurement struct {
 	Namespace  string
 	Dimensions [][]string
 	// Metrics    []map[string]string
-	Metrics []cWMetricDeclaration
+	Metrics []cWMetricDescriptor
 }
 
 type cWMetricStats struct {
@@ -235,10 +235,10 @@ func groupedMetricToCWMeasurement(groupedMetric *groupedMetric, config *Config) 
 	// Add on rolled-up dimensions
 	dimensions = append(dimensions, rollupDimensionArray...)
 
-	metrics := make([]cWMetricDeclaration, len(groupedMetric.metrics))
+	metrics := make([]cWMetricDescriptor, len(groupedMetric.metrics))
 	idx = 0
 	for metricName, metricInfo := range groupedMetric.metrics {
-		metrics[idx] = cWMetricDeclaration{
+		metrics[idx] = cWMetricDescriptor{
 			Name:              metricName,
 			Unit:              "",
 			StorageResolution: 60,
@@ -290,7 +290,7 @@ func groupedMetricToCWMeasurementsWithFilters(groupedMetric *groupedMetric, conf
 	// Group metrics by matched metric declarations
 	type metricDeclarationGroup struct {
 		metricDeclIdxList []int
-		metrics           []cWMetricDeclaration
+		metrics           []cWMetricDescriptor
 	}
 
 	metricDeclGroups := make(map[string]*metricDeclarationGroup)
@@ -311,7 +311,7 @@ func groupedMetricToCWMeasurementsWithFilters(groupedMetric *groupedMetric, conf
 			continue
 		}
 
-		metric := cWMetricDeclaration{
+		metric := cWMetricDescriptor{
 			Name:              metricName,
 			Unit:              "",
 			StorageResolution: 60,
@@ -326,7 +326,7 @@ func groupedMetricToCWMeasurementsWithFilters(groupedMetric *groupedMetric, conf
 		} else {
 			metricDeclGroups[metricDeclKey] = &metricDeclarationGroup{
 				metricDeclIdxList: metricDeclIdx,
-				metrics:           []cWMetricDeclaration{metric},
+				metrics:           []cWMetricDescriptor{metric},
 			}
 		}
 	}

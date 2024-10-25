@@ -177,6 +177,26 @@ func TestRetentionValidateWrong(t *testing.T) {
 
 }
 
+func TestMetricDescriptorStorageResolutionValidateCorrect(t *testing.T) {
+	cfg := &Config{
+		AWSSessionSettings: awsutil.AWSSessionSettings{
+			RequestTimeoutSeconds: 30,
+			MaxRetries:            1,
+		},
+		DimensionRollupOption:       "ZeroAndSingleDimensionRollup",
+		ResourceToTelemetrySettings: resourcetotelemetry.Settings{Enabled: true},
+		logger:                      zap.NewNop(),
+		MetricDeclarations: []*MetricDeclaration{
+			{
+				Dimensions:          [][]string{{"label1"}, {"label1", "label2"}},
+				MetricNameSelectors: []string{"metric.*"},
+				StorageResolution:   1,
+			},
+		},
+	}
+	assert.NoError(t, component.ValidateConfig(cfg))
+}
+
 func TestValidateTags(t *testing.T) {
 	// Create *string values for tags inputs
 	basicValue := "avalue"
